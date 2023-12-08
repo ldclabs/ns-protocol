@@ -18,31 +18,32 @@ A simple data sample is as follows:
 
 Hex:
 ```
-d83584616100830001582782815820ee90735ac719e85dc2f3e5974036387fdf478af7d9d1f8480e97eee601890266820001
-8158406b71fd0c8ae2ccc910c39dd20e76653fccca2638b7935f2312e954f5dccd71b209c58ca57e9d4fc2d3c06a57d585db
-adf4535abb8a9cf103eeb9b9717d87f201 // 117 bytes
+d83584616100820081820182815820ee90735ac719e85dc2f3e5974036387fdf478af7d9d1f8480e
+97eee60189026601815840e23554d996647e86f69115d04515398cc7463062d2683b099371360e93
+fa1cba02351492b70ef31037baa7780053bcf20b12bafe9531ee17fe140b93082a3f0c // 115 bytes
 ```
 
 Diagnostic notation:
 ```
-53([           // cbor tag 53
+53([           // cbor tag 53, quadruple in array
   "a",         // name: "a", UTF-8 string
-  0,           // name's age: 0, unsigned integer
-  [            // name's payload, alias service area, array
-    0,         // service code: 0, unsigned integer
-    1,         // service operation code: 1, unsigned integer
-    <<[        // service operation parameters, array, defined by service protocol
-      [        // here is ed25519 public keys list, indicates the holder of the Name "a"
-        h'ee90735ac719e85dc2f3e5974036387fdf478af7d9d1f8480e97eee601890266'
-      ],       // service operation options, here is a tuple of (0, 3)
-      [
-        0,     // 0 indicates public key' kind is ed25519
-        1      // 1 idicates verifing threshold is 1
+  0,           // name's updating sequence, unsigned integer, 0 is the first sequence
+  [            // name's payload, alias service area, two-tuples or triple in array
+    0,         // service code, unsigned integer, 0 is the native Name service
+    [          // updating operations, array
+      [        // first operation, two-tuples in array
+        1,     // operation code
+        [      // operation params, struct defined by service protocol in cbor schema
+          [    // first param: here is ed25519 public keys list, indicates the holder of the Name "a"
+            h'ee90735ac719e85dc2f3e5974036387fdf478af7d9d1f8480e97eee601890266'
+          ],
+          1    // second param: idicates verifing threshold is 1
+        ]
       ]
-    ]>>
+    ]
   ],
   [            // signatures array
-    h'6b71fd0c8ae2ccc910c39dd20e76653fccca2638b7935f2312e954f5dccd71b209c58ca57e9d4fc2d3c06a57d585dbadf4535abb8a9cf103eeb9b9717d87f201'
+    h'e23554d996647e86f69115d04515398cc7463062d2683b099371360e93fa1cba02351492b70ef31037baa7780053bcf20b12bafe9531ee17fe140b93082a3f0c'
   ]
 ])
 ```
