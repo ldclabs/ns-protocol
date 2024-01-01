@@ -1,10 +1,12 @@
 # Name & Service Protocol
 
-This document specifies a data structure based on [RFC8949 CBOR][cbor] for carrying next-generation Name and Service information on Bitcoin network, which is a open, decentralized, public, and trusted infrastructure for building the Web3 ecosystem.
+> This document specifies a data structure based on [RFC8949 CBOR][cbor] for carrying next-generation Name and Service information on Bitcoin network, which is a open, decentralized, public, and trusted infrastructure for building the Web3 ecosystem.
 
-本文档基于 CBOR 协议 [RFC8949][cbor]，定义了一种在比特币网络上承载下一代 Name & Service 信息的数据结构，Name & Service 是用于构建Web3生态系统的开放、去中心化、公开可信基础设施。
+本文档基于 CBOR 协议 [RFC8949][cbor]，定义了一种在比特币网络上承载下一代 Name & Service 信息的数据结构，Name & Service 是用于构建 Web3 生态系统的开放、去中心化、公开可信基础设施。
 
-比特币网络拥有最强的共识，在原本的金融价值之外，它的 Taproot 脚本机制（铭文）可以用于承载更多价值信息。NS（Name & Service 的简称）协议定义了一种可信数据体系，比特币网络用于承载这个可信数据体系的信任根，NS-Indexer 索引器则从比特币网络上提取这些数据，为上层应用提供可信数据服务。任何人都可以往比特币网络上写入 NS 协议数据，也可以运行 NS-Indexer 索引器查询可信数据。
+比特币网络拥有最强的共识，在原本的金融价值之外，它的 Taproot 脚本机制（铭文）可以用于承载更多价值信息。
+
+NS（Name & Service 的简称）协议定义了一种可信数据体系，比特币网络用于承载这个可信数据体系的信任根，NS-Indexer 索引器则从比特币网络上提取这些数据，为上层应用提供可信数据服务。任何人都可以往比特币网络上写入 NS 协议数据，也可以运行 NS-Indexer 索引器查询可信数据。
 
 ## Overview
 
@@ -34,21 +36,9 @@ This document specifies a data structure based on [RFC8949 CBOR][cbor] for carry
 - ns-indexer: https://github.com/ldclabs/ns-rs/tree/main/crates/ns-indexer
 - ns-inscriber: https://github.com/ldclabs/ns-rs/tree/main/crates/ns-inscriber
 
-### NS 协议的 CBOR Tag 定义
-
-The protocol specifies a new [IANA: Cbor Tag][Iana-CBor-tags] `53` (in homage to Port 53 of the DNS).
-
-```
-Tag: 53
-Data item: Name & Service Protocol
-Semantics: Describes the struct of Name & Service data
-Point of contact: Yan Qing <txr1883@gmail.com>
-Description of semantics: https://github.com/ldclabs/ns-protocol
-```
-
 ### NS 协议的 CBOR 数据预览
 
-NS 协议的数据结构是基于 CBOR 的，CBOR 是一种轻量级的二进制数据格式，它的数据结构类似 JSON，但是比 JSON 更高效，是 JSON 的超集。NS 协议使用了53号 CBOR Tag（53是 DNS 服务端口）。
+NS 协议的数据结构是基于 CBOR 的，CBOR 是一种轻量级的二进制数据格式，它的数据结构类似 JSON，但是比 JSON 更高效，是 JSON 的超集。NS 协议使用了 [53 号 CBOR Tag](./cbor-dns-tag-53.md)（53 是 DNS 服务默认端口）。
 
 第一个NS铭文的数据包如下（可以在 https://cbor.me/ 做可视化解析）:
 ```
@@ -62,7 +52,7 @@ Diagnostic notation:
 53([           // cbor tag 53, quadruple in array
   "0",         // name: "a", UTF-8 string
   0,           // name's updating sequence, unsigned integer, 0 is the first sequence
-  [            // name's payload, alias service area, two-tuples or triple in array
+  [            // name's service payload, two-tuples or triple in array
     0,         // service code, unsigned integer, 0 is the native Name service
     [          // updating operations, array
       [        // first operation, two-tuples in array
@@ -80,15 +70,15 @@ Diagnostic notation:
   ]
 ])
 ```
-这个铭文数据的 `name` 是文本 `"0"`，`sequence` 是 `0`，`payload` 区服务协议 `code` 是 `0`，包含一个操作，其 `subcode` 是 `0`，`params` 则是公钥数组，包含了一个 Ed25519 公钥 `31d6ec...88f7`，表明该公钥控制了名称 `"0"`。
+这个铭文数据的 `name` 是文本 `"0"`，`sequence` 是 `0`，`service` 区服务协议 `code` 是 `0`，包含一个操作，其 `subcode` 是 `0`，`params` 则是公钥数组，包含了一个 Ed25519 公钥 `31d6ec...88f7`，表明该公钥控制了名称 `"0"`。
 
 ## Name Protocol
 
-如上图所示，名称协议是一个四元组，由长度为4的 CBOR 数组表示，分别是 `name`、`sequence`、`payload` 和 `signatures`：
+如上图所示，名称协议是一个四元组，由长度为4的 CBOR 数组表示，分别是 `name`、`sequence`、`service` 和 `signatures`：
 + `name`：名称，是一个1到64字节的 UTF-8 字符串，但不能是大写字符、标点符号、分隔符、字符标记、符号、控制符等，验证逻辑详见 [ns-protocol 源码](https://github.com/ldclabs/ns-rs/blob/30db5871b6c0e5706e249c133aa7663c441f3c2d/crates/ns-protocol/src/ns.rs#L138)。
 + `sequence`：名称的更新序列号，是一个无符号整数，首次声明名称所有权时为 `0`，每次更新名称状态都会递增 `1`。
-+ `payload`：名称的服务负载区，详见服务协议。
-+ `signatures`：数据包签名区，是一个签名数组，签名的内容为 `[name, sequence, payload]` 三元组，签名逻辑详见 [ns-protocol 源码](https://github.com/ldclabs/ns-rs/blob/30db5871b6c0e5706e249c133aa7663c441f3c2d/crates/ns-protocol/src/ns.rs#L201)，所要求的签名数量由 `0` 号服务协议定义。
++ `service`：名称的服务负载区，详见服务协议。
++ `signatures`：数据包签名区，是一个签名数组，签名的内容为 `[name, sequence, service]` 三元组，签名逻辑详见 [ns-protocol 源码](https://github.com/ldclabs/ns-rs/blob/30db5871b6c0e5706e249c133aa7663c441f3c2d/crates/ns-protocol/src/ns.rs#L201)，所要求的签名数量由 `0` 号服务协议定义。
 
 ## Service Protocol
 
@@ -163,6 +153,5 @@ https://github.com/ldclabs/ns-rs/blob/main/crates/ns-protocol/src/state.rs
 
 [cbor]: https://datatracker.ietf.org/doc/html/rfc8949
 [cose]: https://datatracker.ietf.org/doc/html/rfc9052
-[iana-cbor-tags]: https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml
 [cbor-typeof-tag]: https://github.com/cbor-schema/cbor-typeof-tag
 [FROST]: https://github.com/ZcashFoundation/frost
