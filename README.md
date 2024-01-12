@@ -1,4 +1,4 @@
-# Name & Service Protocol
+# Name & Service Protocol — Inscribing naming trusted database on Bitcoin network
 
 > This document specifies a data structure based on [RFC8949 CBOR][cbor] for carrying next-generation Name and Service information on Bitcoin network, which is a open, decentralized, public, and trusted infrastructure for building the Web3 ecosystem.
 
