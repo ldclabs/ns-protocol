@@ -1,30 +1,32 @@
-# Name & Service Protocol — Inscribing naming trusted database on Bitcoin network
+# Naming & Service Protocol
+🧬 Inscribe trusted naming and service database on the Bitcoin network.
 
-> This document specifies a data structure based on [RFC8949 CBOR][cbor] for carrying next-generation Name and Service information on Bitcoin network, which is a open, decentralized, public, and trusted infrastructure for building the Web3 ecosystem.
+> This document specifies a data structure based on [RFC8949 CBOR][cbor] for carrying next-generation naming and service databases on the Bitcoin network, an decentralized, open,, public, and trusted infrastructure for building the Web3 ecosystem.
+
+## Overview 概述
+
+Naming & Service Protocol，命名和服务协议，简称为 NS 协议。
 
 比特币网络拥有最强最稳固的共识，在原本的金融价值之外，它的 Taproot 脚本机制可以用于铭刻恒久远的价值信息。
 
-本文档基于 [RFC8949 CBOR][cbor] 标准定义了一种数据结构，可以在比特币网络上铭刻下一代名称和服务数据信息，这是一种去中心化、完全开放、公开可信的基础设施，用于构建 Web3 生态系统。
-
-Name & Service Protocol，名称和服务协议，简称为 NS 协议。
+本文档定义了一种基于 [RFC8949 CBOR][cbor]标准的数据结构，用于在比特币网络上铭刻下一代命名和服务数据库。这是一种去中心化、完全开放、公开可信的基础设施，用于构建 Web3 生态系统。
 
 任何人都可以在比特币网络上铭刻符合 NS 协议的数据。
 
 任何人都可以运行 NS-Indexer 索引器，从比特币网络上提取这些数据，构建 NS 完整数据状态，为任何其它上层应用提供数据服务。
 
-任何人用 NS-Indexer 索引器构建出来的 NS 数据状态都应该是一致的，它们也是基于区块链结构，可以被快速校验。
-
-## Overview 概述
+任何人用 NS-Indexer 索引器构建出来的 NS 数据状态都应该是一致的，它们也是基于区块链结构，有轻量级的验证机制，可以被快速验证。
 
 ### 协议介绍
 
-简单来说，NS 协议在比特币网络上定义了一种命名可信数据库：
-Name Protocol 名称协议可以在比特币网络上创建名为 `name` 的数据库，任何人都能读这个数据库，但只有持有 `name` 对应 `public_key` 公钥的人才能往这个数据库写入数据。
+简单来说，NS 协议定义了一种用特币网络承载名称和服务信息的数据库。
+
+Naming Protocol 命名协议可以在比特币网络上创建名为 `name` 的数据库，任何人都能读这个数据库，但只有持有 `name` 的 `public_key` 公钥对应私钥的用户才能往这个数据库写入数据。
 Service Protocol 服务协议则定义了数据库的数据模型，只有通过数据模型校验的数据才能被写入。
 
 比如，基于 NS 协议，Alice 可以进行：
 1. 基于 `0` 号服务协议，用一组公钥声明对 `alice` 名称的所有权，此后，Alice 用该名称在比特币链上进行其它行为都需要用对应私钥签名，从而可以被任何人用公钥验证，其它任何人也不能冒用该名称。当然，在比特币网络上，声明是先到先得，如果 `alice` 已被他人声明，Alice  就无法声明了。
-2. 基于 `1` 号服务协议，添加一组 [RFC9052 COSE][cose] 标准的公钥，区别于 `0` 号服务协议中声明的公钥，这组公钥是 Alice 完全控制的 PKI，具备更大的灵活性和扩展性，用于比特币链下的其它互联网行为验证。比如作为 Alice 邮件的验证公钥，作为 Alice 网站的证书公钥等。
+2. 基于 `1` 号服务协议，添加一组 [RFC9052 COSE][cose] 标准的公钥，区别于 `0` 号服务协议中声明的公钥，这组公钥具备更大的灵活性和扩展性，用于比特币链下的其它互联网行为验证。比如作为 Alice 邮件的验证公钥，作为 Alice 网站的证书公钥等。
 3. 基于 `2` 号服务协议添加 Alice 的个人公开信息、社交媒体账号信息等。
 4. 基于 `3` 号服务协议添加 Alice 的钱包收款地址，或者网站 IP 信息，其他用户通过 NS-Indexer 可以查询 `alice` 的网站 IP 并访问和验证。
 
@@ -86,9 +88,9 @@ ff764ab6c8ec6f653f2579909313761dad517853a681cb7e3fed73b33844c04ec406 // 114 byte
 
 这个 NS 铭文数据的 `name` 是 `"0"`，`sequence` 是 `0`，`service` 区服务协议 `code` 是 `0`，包含一个操作，其 `subcode` 是 `0`，`params` 则是公钥数组，包含了一个 Ed25519 公钥 `31d6ec...88f7`，表明该公钥控制了名称 `"0"`。
 
-## Name Protocol 名称协议
+## Naming Protocol 命名协议
 
-如上图所示，名称协议是一个四元组，由长度为4的 CBOR 数组表示，分别是 `name`、`sequence`、`service` 和 `signatures`：
+如上图所示，命名协议是一个四元组，由长度为4的 CBOR 数组表示，分别是 `name`、`sequence`、`service` 和 `signatures`：
 - `name`：名称，是一个长度为1到64字节的 UTF-8 字符串，但不能是大写字符、标点符号、分隔符、字符标记、符号、控制符等，验证逻辑详见 [NS-Protocol 源码](https://github.com/ldclabs/ns-rs/blob/30db5871b6c0e5706e249c133aa7663c441f3c2d/crates/ns-protocol/src/ns.rs#L138)。
 - `sequence`：名称的更新序列号，是一个无符号整数，首次声明名称所有权时的初始值为 `0`，每次更新名称状态都会递增 `1`。
 - `service`：名称的服务负载区，详见服务协议。
@@ -99,7 +101,7 @@ ff764ab6c8ec6f653f2579909313761dad517853a681cb7e3fed73b33844c04ec406 // 114 byte
 如上图所示，服务协议是一个二元组或三元组，由长度为2或3的 CBOR 数组表示，分别是 `code`、`operations` 和可选的 `attesters`：
 - `code`：服务协议代号，是一个64位无符号整数，用于标识服务协议的类型。
 - `operations`：服务状态数据操作区，是长度至少为1的 `Operation` 数组，一次更新可以包含同一服务下的多个操作。`Operation` 则是一个二元组，由 `subcode` 和 `params` 组成，`subcode` 是操作子码，`params` 是 CBOR 格式的操作参数，由 CBOR Schema（基于 [cbor-typeof-tag]）定义，它们的具体含义由服务协议定义。
-- `attesters`：可选的证明人，如果提供，它应该是1到 n 个已声明的 `name`，证明人应该按照名称协议的描述对数据包进行签名，NS-Indexer 索引器会验证该签名。`attesters` 用于需要服务提供方和用户共同确认的可信数据场景。比如数字签证场景下，服务提供方是某机构，用户是某个人，服务提供方和用户都需要对数据包进行签名，才能确认这个签证数据是可信的。
+- `attesters`：可选的证明人，如果提供，它应该是1到 n 个已声明的 `name`，证明人应该按照命名协议的描述对数据包进行签名，NS-Indexer 索引器会验证该签名。`attesters` 用于需要服务提供方和用户共同确认的可信数据场景。比如数字签证场景下，服务提供方是某机构，用户是某个人，服务提供方和用户都需要对数据包进行签名，才能确认这个签证数据是可信的。
 
 服务协议代号计划如下：
 | Code | Name         | Description                                                                                                                                                                         |
@@ -115,7 +117,7 @@ ff764ab6c8ec6f653f2579909313761dad517853a681cb7e3fed73b33844c04ec406 // 114 byte
 
 比如域名场景下，`name` 实际相当于顶级域名，用户可以把该顶级域名的权威 Nameserver 解析记录到链上，并且可能需要域名服务提供方作为 `attesters` 证明人，子域名相关信息无需上链，其解析则由域名服务提供方负责。这样，用户可以通过 NS-Indexer 索引器查询到域名的权威 Nameserver，然后再到权威 Nameserver 查询子域名的解析记录，并且子域名解析记录也是由 `1` 号 PKI 服务的公钥来验证的。用户对域名拥有绝对控制权，不但可以彻底解决域名劫持问题，还可以实现域名的去中心化，域名服务提供方也可以是多个，用户可以自由选择。
 
-### `0` 号服务协议：Name Service
+### `0` 号服务协议：Naming Service
 
 `0`号服务协议是服务于 NS 自身的协议，它定义了名称的所有权声明和更新操作，以及名称状态数据的验证。
 
